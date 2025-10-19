@@ -78,3 +78,12 @@ Old code requires v7 syntax	pip install ipywidgets==7.7.1
 Unsure	Check ipywidgets.__version__
 
 If you show me the import section of your script, I can tell you exactly which lines need changing.
+
+
+before:
+
+from ipywidgets import Text, DatePicker, Button, VBox, HTML, Tabs
+
+after:
+
+from ipywidgets import Text, DatePicker, Button, VBox, HTML, Tab
