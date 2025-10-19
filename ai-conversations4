@@ -1,3 +1,8 @@
+----------------------------------
+Tool: ChatGPT
+Date: 2025-10-18
+----------------------------------
+
 Me: When testing parse_weather_question(), why can’t it recognize some city names even though I have already imported spaCy?
 
 AI: Short version: importing spaCy isn’t enough. City detection depends on the model, the pipeline, the language, and your rules/fallbacks. If parse_weather_question() only does import spacy (or uses a blank/stripped pipeline), the NER won’t recognize many cities.
