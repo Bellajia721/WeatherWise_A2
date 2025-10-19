@@ -1,0 +1,124 @@
+----------------------------------
+Tool: ChatGPT
+Date: 2025-10-18
+----------------------------------
+
+Me: Why does the API return only a few days of forecast data even when the forecast_days parameter is set to a higher number?
+How can I identify whether this limit comes from the code, the API design, or the dataset itself?
+
+AI: Great question—this kind of “why do I only get 2–3 days?” issue can come from three places, and the quickest fix is to pinpoint where the cap is introduced: in your code, in the API’s contract/plan, or in the underlying dataset.
+
+Here’s a practical, no-nonsense way to diagnose it fast.
+
+Why this happens (common causes)
+	1.	API design / plan limits (most common)
+	•	Many free/public weather endpoints cap daily forecasts (often 3–7 days) regardless of the forecast_days you pass.
+	•	Even if your wrapper exposes forecast_days=5, the upstream API may ignore that and still return 3 days.
+	2.	Wrapper/library logic
+	•	The wrapper may clamp or slice results (e.g., weather[:3]), or silently fallback to fewer days on errors/rate-limits.
+	•	Some wrappers map your parameter name to a different upstream parameter (or don’t forward it at all).
+	3.	Dataset availability
+	•	Certain locations, dates, or data providers simply don’t have multi-day coverage.
+	•	If the provider merges multiple sources, gaps can shorten the series.
+
+⸻
+
+How to identify the source (10-minute checklist)
+
+A. Prove what the API returned (raw)
+
+Log/print the exact JSON from the HTTP response before your code parses it.
+
+data = fetch_json_raw(...)  # however your wrapper gets the JSON
+import json, textwrap
+print(textwrap.shorten(json.dumps(data)[:4000], width=4000))
+print("days_returned:", len(data.get("weather", [])))
+
+	•	If the raw weather array has only 3 items → API/provider is capping it (or dataset is short).
+	•	If the raw array has ≥5 but you only see 3 later → the cap is in your code/wrapper.
+
+B. Bypass the wrapper (direct call)
+
+Make the same request directly with requests and compare counts.
+
+import requests
+resp = requests.get(API_URL, params={...})  # same location/params
+raw = resp.json()
+print(len(raw.get("weather", [])), [d.get("date") for d in raw.get("weather", [])])
+
+	•	Counts match wrapper → API/dataset issue.
+	•	Counts larger than wrapper → wrapper logic is trimming.
+
+C. Trace parameter pass-through
+
+Search the wrapper for where forecast_days is used.
+	•	Is it forwarded to the HTTP params?
+	•	Is there any clamp like min(forecast_days, 3)?
+	•	Any fallback path (e.g., on rate-limit or error) that defaults to 3?
+
+D. Look for post-processing slices
+
+Greps to run in the wrapper:
+	•	[:3], head(3), take(3), limit=3, days=3
+	•	Any “safety” reducers after parsing (e.g., merging days, dropping “partial” days).
+
+E. Check API docs / plan matrix
+	•	Confirm the contracted number of daily forecasts for your plan/tier and the parameter name the API expects (some use num_of_days, others ignore it).
+	•	If docs promise >3 days but you consistently get 3 in raw JSON, you might be hitting anonymous/public limits (e.g., no API key) or rate-limit downgrade.
+
+F. Compare multiple locations
+
+Try a big city vs a remote spot.
+
+for city in ["Perth", "Sydney", "New York", "SmallTown, AU"]:
+    raw = requests.get(API_URL, params={"q": city, ...}).json()
+    print(city, len(raw.get("weather", [])))
+
+	•	If big cities get 3 and small towns get fewer → dataset coverage issue.
+	•	If all are capped equally → API plan or wrapper clamp.
+
+G. Vary the date horizon (if supported)
+
+Some APIs support start/end or pagination. If you can request specific windows and still can’t exceed 3 → API cap.
+
+H. Check error/log channels
+
+Turn on verbose logging. You might see:
+	•	429s (rate limits) → wrapper may silently drop extra days.
+	•	4xx/5xx on extended forecast route → wrapper falls back to current + next 2 days.
+
+I. Cache interference
+
+If the wrapper caches responses keyed only by location (not by forecast_days), you’ll keep getting a 3-day result from a previous call.
+	•	Clear cache, change the key, or disable cache temporarily.
+
+J. Unit test the boundary
+
+Write a tiny assertion test so you never get surprised again:
+
+def test_forecast_days_passthrough():
+    days = 5
+    raw = fetch_raw(location="Perth", forecast_days=days)
+    assert "weather" in raw
+    assert len(raw["weather"]) >= days, "Upstream cap or wrapper clamp detected"
+
+
+⸻
+
+Quick decision tree
+	•	Raw API returns 3 days → API/plan/dataset limit.
+	•	Action: check docs/plan; add API key; upgrade tier; or switch provider.
+	•	Raw API returns 5 days, wrapper returns 3 → wrapper/code limit.
+	•	Action: remove slices/clamps; ensure parameter names match; fix caching.
+	•	Some locations give fewer days → dataset coverage.
+	•	Action: handle gracefully; backfill with another provider; document limitations.
+
+⸻
+
+Extra hardening tips
+	•	Surface limits to the UI: show “Provider returns 3 days on this plan.”
+	•	Graceful fallback: if days < requested, annotate the response.
+	•	Provider abstraction: wrap the weather source so you can swap to one that supports 5–7–14 days without changing app code.
+	•	Automated checks: nightly job that pings a few cities and alerts if the day count drops.
+
+If you share a short snippet of your wrapper call and the raw JSON you’re seeing (just the weather array headers and dates), I can pinpoint the exact bottleneck in a couple of lines.
