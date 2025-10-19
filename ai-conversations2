@@ -1,3 +1,8 @@
+----------------------------------
+Tool: ChatGPT
+Date: 2025-10-18
+----------------------------------
+
 Me: There is an error saying: “ImportError: cannot import name ‘Tabs’ from ‘ipywidgets’ (/usr/local/lib/python3.12/dist-packages/ipywidgets/init.py)”. Why does this happen?
 
 AI: That error:
