@@ -63,11 +63,182 @@ Quick checklist
 	•	Don’t return a widget/value from the callback if something might auto-display it.
 
 Follow that pattern and the extra empty boxes will stop appearing.
-(continue until the conversation ends)
 
-📌 No special formatting required.
-Just copy the entire conversation text and paste it here.
 
-⚠️ Warning:
-Use the `.txt` format, **not screenshots or PDFs**. AI logs should be searchable and lightweight.
+before:
+
+# Define menu functions using pyinputplus or ipywidgets here
+city_input = Text(description = 'City:', placeholder = 'e.g. Perth')
+date input = DatePicker(description = 'Date:")
+submit_button = Button(description='Get Weather', button_style='success')
+status box = HTML (value=' ')
+output_box = HTML (value=")
+def on_submit_button_click(b):
+if True:
+city = city_input.value
+date = date_input.value.strftime ('&m-&d-&y')
+print(f'City: (city)')
+print(f'Date: {date)')
+if not city_input:
+status box.value = "Please enter a city."
+if not date_input:
+status_box.value = "Please pick a date."
+try:
+C2LY = CLLY-OUL.vd.ue
+data = get_weather_data(city, forecast_days = 5)
+ai_extend_forecast (data)
+def format_daily_weather_lines(d):
+date = d.get("date_input")
+max_temp = d-get ("max_temp")
+min_temp = d.get ("min_temp")
+average_temp = d.get ("average_temp")
+total_precip = d.get ("'total_precip")
+windspeed = d. get ("windspeed")
+humidity = d.get ("humidity")
+return f"(date): Max: {max_temp}°C, Min: (min_temp}°C, Avg: {average_temp}°C, Precip: {total_precip}mm, Wind: (windspeed}km/h, Humidity: {humidity}s"
+output_box.value = format_daily_weather_lines (data)
+create_temperature_visualisation(data)
+create_precipitation_visualisation (data)
+create_windspeed_visualisation (data) create_humidity_visualisation(data)
+except Exception as e:
+status_box.value = f"Error: (e}"
+nlp_input = Text (|
+description= 'Ask:',
+placeholder='e.g. Will it rain in Perth tomorrow?'
+parse_btn = Button(description='Auto-fill', button_style='info')
+def when_to_date(when):
+it when 1s None.
+return None
+today = datetime.today().date()
+if isinstance(when, str):
+time = when. lower () strip()
+if time == "today":
+return today
+if time == "tomorrow":
+return today + timedelta (days=1)
+return when
+if isinstance(when, int) and 1 < when <= 7:
+today_weekday = today-weekday)
+when_weekday = (today_weekday + when) $ 7
+if when_weekday < today_weekday:
+when weekday += 7
+return today + timedelta (days=when_weekday - today_weekday)
+return None
+def on_parse_btn_click(b):
+question = nlp_input. value
+parsed = parse_weather_question (question)
+city = parsed.get ("City")
+when = when_to_date(parsed.get ("Date"))
+attribute = parsed.get("attribute")
+parse_btn.on_click(on_parse_btn_click)
+manual_box = VBox [city_input, date_input, submit_button] )
+nlp_box = VBox([nlp_input, parse_btn])
+tabs = Tab(children= (manual_box, nip_box) )
+tabs.set title 0,
+Manual"»
+tabs.set_title(1,
+'Natural language')
+display (tabs)
+submit_button.on_click(on_submit_button_click)
+display(VBox([city_input, date_input, submit_button, status_box, output_box)))|
+
+after:
+
+# Define menu functions using pyinputplus or ipywidgets here
+city_input = Text(description = 'City:', placeholder = 'e.g. Perth')
+date_input = DatePicker(description = 'Date:')
+submit_button = Button(description='Get Weather', button_style='success')
+status_box = HTML(value='')
+output_box = HTML(value='')
+
+      
+def on_submit_button_click(b):
+  if True:
+    city = city_input.value
+    date = date_input.value.strftime('%m-%d-%y')
+    print(f'City: {city}')
+    print(f'Date: {date}')
+
+  
+  if not city_input:
+    status_box.value = "Please enter a city."
+  if not date_input:
+    status_box.value = "Please pick a date."
+
+  try:
+    city = city_input.value
+    data = get_weather_data(city, forecast_days = 5)
+    ai_extend_forecast(data)
+    
+    def format_daily_weather_lines(d):
+      date = d.get("date_input")
+      max_temp = d.get("max_temp")
+      min_temp = d.get("min_temp")
+      average_temp = d.get("average_temp")
+      total_precip = d.get("total_precip")
+      windspeed = d.get("windspeed")
+      humidity = d.get("humidity")
+      return f"{date}: Max: {max_temp}°C, Min: {min_temp}°C, Avg: {average_temp}°C, Precip: {total_precip}mm, Wind: {windspeed}km/h, Humidity: {humidity}%"
+
+    output_box.value = format_daily_weather_lines(data)
+    create_temperature_visualisation(data)
+    create_precipitation_visualisation(data)
+    create_windspeed_visualisation(data)
+    create_humidity_visualisation(data)
+  except Exception as e:
+    status_box.value = f"Error: {e}"
+
+nlp_input = Text(
+    description='Ask:',
+    placeholder='e.g. Will it rain in Perth tomorrow?'
+)
+parse_btn = Button(description='Auto-fill', button_style='info')
+
+def when_to_date(when):
+  if when is None:
+    return None
+  today = datetime.today().date()
+  if isinstance(when, str):
+    time = when.lower().strip()
+    if time == "today":
+      return today
+    if time == "tomorrow":
+      return today + timedelta(days=1)
+    return when
+  if isinstance(when, int) and 1 <= when <= 7:
+    today_weekday = today.weekday()
+    when_weekday = (today_weekday + when) % 7
+    if when_weekday < today_weekday:
+      when_weekday += 7
+    return today + timedelta(days=when_weekday - today_weekday)
+  return None
+
+def on_parse_btn_click(b):
+  question = nlp_input.value
+  if not question:
+        status_box.value = "Please enter a question."
+        return
+  parsed = parse_weather_question(question)
+  city = parsed.get("City")
+  when = when_to_date(parsed.get("Date"))
+  attribute = parsed.get("attribute")
+  if city:
+        city_input.value = city
+  if when:
+        date_input.value = when
+
+parse_btn.on_click(on_parse_btn_click)
+
+manual_box = VBox([city_input, date_input, submit_button])
+nlp_box = VBox([nlp_input, parse_btn])
+
+tabs = Tab(children=[manual_box, nlp_box])
+tabs.set_title(0, 'Manual')
+tabs.set_title(1, 'Natural language')
+
+display(tabs)
+
+submit_button.on_click(on_submit_button_click)
+
+display(VBox([status_box, output_box]))
 
