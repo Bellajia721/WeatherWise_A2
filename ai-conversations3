@@ -1,3 +1,8 @@
+----------------------------------
+Tool: ChatGPT
+Date: 2025-10-18
+----------------------------------
+
 Me: Is there a Python database that can extract and recognize all countries and regions around the world?
 
 AI: Good clarification — you’re now asking not just for a reference database but for a Python tool that can extract and recognize (i.e., detect in text) all countries and regions worldwide — essentially a Named Entity Recognition (NER) system with a complete geographic database.
