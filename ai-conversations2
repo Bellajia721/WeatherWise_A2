@@ -1,0 +1,75 @@
+Me: There is an error saying: “ImportError: cannot import name ‘Tabs’ from ‘ipywidgets’ (/usr/local/lib/python3.12/dist-packages/ipywidgets/init.py)”. Why does this happen?
+
+AI: That error:
+
+ImportError: cannot import name 'Tabs' from 'ipywidgets'
+
+means the version of ipywidgets you have installed no longer exposes Tabs at the top level.
+Here’s what’s going on and how to fix it 👇
+
+⸻
+
+🧩 Why it happens
+	•	In older versions (≤ 7.x), Tabs was imported directly:
+
+from ipywidgets import Tabs
+
+
+	•	In newer versions (≥ 8.x), the internal API changed — Tabs is now implemented as
+ipywidgets.Tab (singular), not Tabs.
+There’s no symbol called Tabs anymore, so importing it triggers that ImportError.
+
+This often happens when:
+	•	your notebook / Colab / JupyterLab upgraded ipywidgets automatically, or
+	•	you’re using sample code written for ipywidgets 7 while your environment runs 8.
+
+⸻
+
+✅ How to fix it
+
+Option 1: Update the code (preferred)
+
+Replace:
+
+from ipywidgets import Tabs
+tabs = Tabs(children=[w1, w2])
+
+with:
+
+from ipywidgets import Tab
+tabs = Tab(children=[w1, w2])
+
+The class is now Tab, not Tabs.
+
+⸻
+
+Option 2: Match the old version
+
+If the code must stay unchanged (e.g., grading script, legacy notebook):
+
+pip install ipywidgets==7.7.1
+
+then restart the kernel.
+
+⸻
+
+🧠 How to confirm which version you’re running
+
+In a notebook cell:
+
+import ipywidgets
+print(ipywidgets.__version__)
+
+	•	8.x → use Tab
+	•	7.x → Tabs still exists
+
+⸻
+
+🧾 Summary
+
+Cause	Fix
+API rename in ipywidgets 8	Use Tab instead of Tabs
+Old code requires v7 syntax	pip install ipywidgets==7.7.1
+Unsure	Check ipywidgets.__version__
+
+If you show me the import section of your script, I can tell you exactly which lines need changing.
