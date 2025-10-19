@@ -122,3 +122,82 @@ Extra hardening tips
 	•	Automated checks: nightly job that pings a few cities and alerts if the day count drops.
 
 If you share a short snippet of your wrapper call and the raw JSON you’re seeing (just the weather array headers and dates), I can pinpoint the exact bottleneck in a couple of lines.
+
+
+before:
+
+import requests
+import matplotlib.pyplot as plt import pyinputplus as pyip
+# V Import after installing (if needed)
+from fetch_my_weather import get_weather from hands_on_ai.chat import get_response
+# Add any other setup code here
+from ipywidgets import Text, DatePicker, Button, VBox from IPython.display import display
+city_input = Text(description = 'City:', placeholder = 'e.g. Perth')
+date_input = DatePicker(description = 'Date:')
+submit_button = Button(description='Get Weather', button_style='success')
+def on_submit_button_click(b):
+city = city_input.value
+date = date_input.value.strftime ('&m-%d-gy')
+print(f'City: {city}')
+print(f'Date: {date}')
+submit_button.on_click(on_submit_button_click)
+display(VBox([city_input, date_input, submit_button]))
+
+after:
+
+import requests
+import matplotlib.pyplot as plt
+import pyinputplus as pyip
+import json
+import re
+import spacy
+# ✅ Import after installing (if needed)
+from fetch_my_weather import get_weather
+from hands_on_ai.chat import get_response
+# Add any other setup code here
+from ipywidgets import Text, DatePicker, Button, VBox, HTML, Tab
+from IPython.display import display
+from datetime import datetime, timedelta
+from hands_on_ai.chat import get_response
+
+def ai_extend_forecast(weather_data: dict, extra_days: int = 2):
+    if not weather_data or "daily" not in weather_data or len(weather_data["daily"]) == 0:
+        print("⚠️ No base daily data to extend.")
+        return weather_data
+
+    base_days = weather_data["daily"][-3:]
+    compact = [
+        {
+            "date": d.get("date"),
+            "max_temp": d.get("maxtempC"),
+            "min_temp": d.get("mintempC"),
+            "average_temp": d.get("avgtempC"),
+            "total_precip": d.get("totalprecipMM"),
+        }
+        for d in base_days
+    ]
+
+    prompt = f"""
+    You are a cautious weather assistant.
+    Based on the last real 3 daily records below:
+    {compact}
+    Estimate the next {extra_days} days' weather with realistic smooth trends.
+    Return ONLY JSON list with keys: date, max_temp, min_temp, average_temp, total_precip.
+    """
+
+    raw = get_response(prompt)
+    print("AI raw output:", raw)
+ 
+    try:
+        estimates = json.loads(raw)
+    except:
+        print(" Model output not JSON — skipping extension.")
+        return weather_data
+
+    last_date = datetime.strptime(base_days[-1]["date"], "%Y-%m-%d").date()
+    for i, e in enumerate(estimates):
+        e["date"] = (last_date + timedelta(days=i + 1)).isoformat()
+        e["ai_estimated"] = True
+        weather_data["daily"].append(e)
+
+    return weather_data
